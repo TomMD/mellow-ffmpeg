@@ -13,25 +13,26 @@ module Mellow.FFmpeg
   , Z(..), shape, (:.)(..), DIM2
   ) where
 
-import Codec.FFmpeg
-import Vision.Image as I
-import Vision.Image.JuicyPixels (toJuicyRGBA, toFridayRGBA)
-import Vision.Primitive
+import Codec.FFmpeg as FF
+import Codec.Picture (DynamicImage(..))
+import Codec.Picture.Saving (imageToJpg)
 import Control.Concurrent
 import Control.Monad
 import qualified Data.ByteString.Lazy as Lazy
+import Data.Maybe (fromMaybe)
 import Data.Time
-import System.Exit
 import Foreign.Storable ()
-
-import Codec.Picture.Saving (imageToJpg)
-import Codec.Picture (DynamicImage(..))
-import Graphics.Gloss.Juicy (fromImageRGBA8)
 import Graphics.Gloss.Interface.IO.Game
+import Graphics.Gloss.Juicy (fromImageRGBA8)
+import System.Exit
+import Vision.Image as I
+import Vision.Image.JuicyPixels (toJuicyRGBA, toFridayRGBA)
+import Vision.Primitive
 
 data MellowCfg s =
       MellowCfg { world           :: s
                 , resolution      :: Display
+                , ffmpegInput     :: Maybe FF.InputSource
                 , backgroundColor :: Color
                 , framerate       :: Int
                 , updateOp        :: RGBA -> s -> IO s
@@ -44,7 +45,7 @@ defaultCfg :: s                        -- ^ Initial state
            -> (s -> IO RGBA)           -- ^ Render state into an RGBA image
            -> (Event -> s -> IO s)     -- ^ Event handler
            -> MellowCfg s
-defaultCfg s = MellowCfg s (InWindow "Mellow" (640,480) (200,200)) black 20
+defaultCfg s = MellowCfg s (InWindow "Mellow" (640,480) (200,200)) Nothing black 20
 
 mellowWith :: MellowCfg s -> IO ()
 mellowWith (MellowCfg {..}) = do
@@ -55,7 +56,9 @@ mellowWith (MellowCfg {..}) = do
 
   -- Start a thread reading frames.
   initFFmpeg
-  (get,_) <- imageReader (Camera "0:0")
+  let defIpt = Camera "0:0" defaultCameraConfig { FF.resolution = Just (640,480) }
+      ffipt  = fromMaybe defIpt ffmpegInput
+  (get,_) <- imageReader ffipt
   _ <- forkIO $ forever (get >>= maybe (return ()) wtImg)
 
   -- Start a thread that updates the state with each frame.
