@@ -52,7 +52,7 @@ mellowWith (MellowCfg {..}) = do
   ref        <- newEmptyMVar :: IO (MVar RGBA)
   worldRef   <- newMVar world
   let rdImg   = takeMVar ref
-      wtImg x = tryPutMVar ref (toFridayRGBA x) >> return ()
+      wtImg x = void (tryPutMVar ref (toFridayRGBA x))
 
   -- Start a thread reading frames.
   initFFmpeg
@@ -72,8 +72,8 @@ mellowWith (MellowCfg {..}) = do
          (const return)
 
 -- | @mellow state0 updateOp renderOp keyPress@ will continually call
--- updateOp with each new frame from a Kinect, call @renderOp@ to render
--- the frame using Gloss, and @keyPress@ to handle key presses.
+-- updateOp with each new frame from the camera, call @renderOp@ to render
+-- the frame using Friday, and @keyPress@ to handle key presses.
 mellow :: s -> (RGBA -> s -> IO s) -> (s -> IO RGBA) -> (Event -> s -> IO s) -> IO ()
 mellow world updateOp renderOp keyPress =
   mellowWith (defaultCfg world updateOp renderOp keyPress)
