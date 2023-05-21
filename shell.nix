@@ -13,5 +13,6 @@ in git.mkShell {
     libGLU.dev
     (ffmpeg_4-headless.override { buildAvutil = true; })
     pkg-config
+    git
   ];
 }
