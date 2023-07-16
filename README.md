@@ -25,4 +25,4 @@ image edges.  The basic steps are:
    using whatever techniques you desire (see the 'friday' library).
 
 
-For example, see the (canny demo)[examples/Canny.hs].
+For example, see the (canny demo)[examples/EdgeDetect.hs].
